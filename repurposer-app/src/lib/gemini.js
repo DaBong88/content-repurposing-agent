@@ -1,6 +1,18 @@
 export async function extractTextFromUrl(url) {
   try {
     const response = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
+    
+    if (!response.ok) {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to extract content.");
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Scraping server returned status ${response.status}. It usually indicates an internal Vercel error or timeout.`);
+      }
+    }
+
     const data = await response.json();
     if (!data.contents) throw new Error("No content received");
     
@@ -15,7 +27,7 @@ export async function extractTextFromUrl(url) {
     return doc.body.textContent.replace(/\s+/g, ' ').trim().slice(0, 30000); // Send max 30k chars to avoid token limits
   } catch (error) {
     console.error("Scraping error:", error);
-    throw new Error("Could not extract content from the URL. Ensure the URL is public or the proxy is running.");
+    throw new Error(error.message || "Could not extract content from the URL. Ensure the URL is public.");
   }
 }
 
@@ -30,8 +42,14 @@ export async function generateContentFormats(sourceText, context, refImages = []
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to generate content.");
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate content.");
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Generation server returned status ${response.status}. The request may have timed out. Vercel Hobby limits execution to 10s by default.`);
+      }
     }
 
     return await response.json();
@@ -40,3 +58,4 @@ export async function generateContentFormats(sourceText, context, refImages = []
     throw new Error(error.message || "Failed to generate content from backend API.");
   }
 }
+
