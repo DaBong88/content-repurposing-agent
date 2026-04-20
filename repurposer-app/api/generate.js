@@ -1,5 +1,14 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
+export const config = {
+  maxDuration: 60,
+  api: {
+    bodyParser: {
+      sizeLimit: '8mb'
+    }
+  }
+};
+
 const SYSTEM_PROMPT = `
 You are a content repurposing agent writing in the voice of Shaunak Mukherjee — a sharp, insight-led content strategist and brand thinker.
 
