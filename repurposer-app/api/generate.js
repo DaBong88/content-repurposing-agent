@@ -1,12 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const config = {
-  maxDuration: 60,
-  api: {
-    bodyParser: {
-      sizeLimit: '8mb'
-    }
-  }
+  maxDuration: 60
 };
 
 const SYSTEM_PROMPT = `
@@ -151,29 +146,34 @@ Return a single valid JSON object. For Instagram formats, include the three sub-
 `;
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { sourceText, context, refImages } = req.body;
-
-  if (!process.env.GEMINI_API_KEY) {
-    return res.status(500).json({ error: 'GEMINI_API_KEY is not set in environment variables' });
-  }
-
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
-    systemInstruction: SYSTEM_PROMPT,
-    generationConfig: {
-      temperature: 0.7,
-      responseMimeType: "application/json"
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
     }
-  });
 
-  const parts = [];
+    if (!req.body) {
+      return res.status(400).json({ error: 'Request body is missing. The payload might be too large.' });
+    }
 
-  const textPrompt = `
+    const { sourceText, context, refImages } = req.body;
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ error: 'GEMINI_API_KEY is not set in environment variables' });
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction: SYSTEM_PROMPT,
+      generationConfig: {
+        temperature: 0.7,
+        responseMimeType: "application/json"
+      }
+    });
+
+    const parts = [];
+
+    const textPrompt = `
 Source Content:
 ${sourceText}
 
@@ -182,21 +182,20 @@ ${context ? context : "None"}
 
 Please evaluate any attached images (if any) to determine the design style.
 Generate the precise JSON format requested.
-  `;
-  parts.push(textPrompt);
+    `;
+    parts.push(textPrompt);
 
-  if (refImages && refImages.length > 0) {
-    for (const img of refImages) {
-      parts.push({
-        inlineData: {
-          data: img.data,
-          mimeType: img.mimeType
-        }
-      });
+    if (refImages && refImages.length > 0) {
+      for (const img of refImages) {
+        parts.push({
+          inlineData: {
+            data: img.data,
+            mimeType: img.mimeType
+          }
+        });
+      }
     }
-  }
 
-  try {
     const result = await model.generateContent(parts);
     const text = result.response.text();
     const json = JSON.parse(text);
@@ -220,7 +219,8 @@ Generate the precise JSON format requested.
 
     return res.status(200).json(json);
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return res.status(500).json({ error: "Failed to generate content. " + error.message });
+    console.error("Vercel Function / Gemini Error:", error);
+    return res.status(500).json({ error: "Failed to generate content: " + (error.message || "Unknown error") });
   }
 }
+
