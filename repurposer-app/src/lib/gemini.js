@@ -9,7 +9,7 @@ export async function extractTextFromUrl(url) {
         throw new Error(errorData.error || "Failed to extract content.");
       } else {
         const errorText = await response.text();
-        throw new Error(`Scraping server returned status ${response.status}. It usually indicates an internal Vercel error or timeout.`);
+        throw new Error(`Scraping server returned status ${response.status}. Details: ${errorText.substring(0, 150)}`);
       }
     }
 
@@ -48,7 +48,7 @@ export async function generateContentFormats(sourceText, context, refImages = []
         throw new Error(errorData.error || "Failed to generate content.");
       } else {
         const errorText = await response.text();
-        throw new Error(`Generation server returned status ${response.status}. The request may have timed out. Vercel Hobby limits execution to 10s by default.`);
+        throw new Error(`Generation server returned status ${response.status}. Vercel Error Details: ${errorText.substring(0, 300)}`);
       }
     }
 
@@ -58,4 +58,5 @@ export async function generateContentFormats(sourceText, context, refImages = []
     throw new Error(error.message || "Failed to generate content from backend API.");
   }
 }
+
 
