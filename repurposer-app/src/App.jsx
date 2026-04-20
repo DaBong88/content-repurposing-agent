@@ -9,14 +9,14 @@ function App() {
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleRepurpose = async ({ url, context, apiKey, refImages }) => {
+  const handleRepurpose = async ({ url, context, refImages }) => {
     setIsLoading(true);
     setError(null);
     setResults(null);
 
     try {
       const sourceText = await extractTextFromUrl(url);
-      const formatsData = await generateContentFormats(apiKey, sourceText, context, refImages);
+      const formatsData = await generateContentFormats(sourceText, context, refImages);
       setResults(formatsData);
     } catch (err) {
       setError(err.message || 'Something went wrong.');

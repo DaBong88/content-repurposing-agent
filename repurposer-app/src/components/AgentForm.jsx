@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Sparkles, Link as LinkIcon, FileText, Image as ImageIcon, X, KeyRound } from 'lucide-react';
+import { Sparkles, Link as LinkIcon, FileText, Image as ImageIcon, X } from 'lucide-react';
 
 export default function AgentForm({ onSubmit, isLoading }) {
   const [url, setUrl] = useState('');
   const [context, setContext] = useState('');
-  const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
   const [refImages, setRefImages] = useState([]);
 
   const handleImageUpload = (e) => {
@@ -23,9 +22,8 @@ export default function AgentForm({ onSubmit, isLoading }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!url || !apiKey) return;
-    localStorage.setItem('gemini_api_key', apiKey);
-    onSubmit({ url, context, apiKey, refImages });
+    if (!url) return;
+    onSubmit({ url, context, refImages });
   };
 
   return (
@@ -98,33 +96,13 @@ export default function AgentForm({ onSubmit, isLoading }) {
           )}
         </div>
 
-        <div className="section-sep" />
-
-        {/* API Key */}
-        <div className="field">
-          <label htmlFor="api-key" className="field-label">
-            <KeyRound size={12} /> Gemini API Key
-          </label>
-          <div className="input-password-wrapper">
-            <input
-              id="api-key"
-              type="password"
-              className="linear-input"
-              placeholder="AIzaSy…"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-              required
-            />
-          </div>
-        </div>
-
       </div>
 
       <div className="config-footer">
         <button
           type="submit"
           className="btn-primary"
-          disabled={isLoading || !url || !apiKey}
+          disabled={isLoading || !url}
         >
           {isLoading ? (
             <><div className="spinner" /><span>Generating…</span></>
